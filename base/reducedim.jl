@@ -134,38 +134,11 @@ for (f1, f2, typeextreme) in ((:min, :max, :typemax), (:max, :min, :typemin))
         # Next, throw if reduction is over a region with length zero
         any(i -> isempty(axes(A, i)), region) && _empty_reduce_error()
 
-        # Heuristic to guess the return type of f for elements of A
-        T = _realtype(f, promote_union(eltype(A)))
-
         # Make a view of the first slice of the region
         A1 = view(A, ri...)
 
-        if isempty(A1)
-            # If the slice is empty just return an empty array of the right
-            # size and guessed type
-            return similar(A, T, ri)
-        else
-            # Otherwise use the min/max of the first slice as initial value
-            # (unless it is unordered (NaN or missing), then use typemin/max).
-            # If the guessed type T isn't correct, use the type of the initial
-            # value.
-
-            v0 = mapreduce(f, $f2, A1)
-            # Update the guessed type if necessary
-            T = v0 isa T ? T : typeof(v0)
-
-            # but NaNs and missing need to be avoided as initial values
-            if isunordered(v0)
-                Tnm = nonmissingtype(T)
-                # TODO: Some types, like BigInt, don't support typemin/typemax.
-                # So a Matrix{Union{BigInt, Missing}} can still error here.
-                v0 = $typeextreme(Tnm)
-                # v0 may have changed type.
-                T = v0 isa T ? T : Union{T, typeof(v0)}
-            end
-
-            return reducedim_initarray(A, region, v0, T)
-        end
+        # Return f applied to the first slice of the region
+        return f.(A1)
     end
 end
 reducedim_init(f::Union{typeof(abs),typeof(abs2)}, op::typeof(max), A::AbstractArray{T}, region) where {T} =
