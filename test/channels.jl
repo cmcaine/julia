@@ -619,3 +619,21 @@ end
         @test n_avail(c) == 0
     end
 end
+
+@testset "isdone for Channels" begin
+    c = Channel()
+    close(c)
+    @test Base.isdone(c)
+
+    c = Channel(1)
+    put!(c, 0)
+    @test !Base.isdone(c)
+
+    c = Channel(1)
+    @async @test !Base.isdone(c)
+    put!(c, 0)
+
+    c = Channel(1)
+    @async @test Base.isdone(c)
+    close(c)
+end
