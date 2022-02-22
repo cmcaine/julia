@@ -505,3 +505,21 @@ function iterate(c::Channel, state=nothing)
 end
 
 IteratorSize(::Type{<:Channel}) = SizeUnknown()
+
+function isdone(c::Channel)
+    # Does the channel have an item right now?
+    isready(c) && return false
+    # Is channel empty and closed?
+    !isopen(c) && return true
+    # The channel is open. Wait until it gets an item or is closed.
+    try
+        wait(c)
+        return false
+    catch e
+        if isa(e, typeof(c.excp)) && !isopen(c)
+            return true
+        else
+            rethrow()
+        end
+    end
+end
