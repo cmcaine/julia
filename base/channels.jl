@@ -496,7 +496,7 @@ function iterate(c::Channel, state=nothing)
     try
         return (take!(c), nothing)
     catch e
-        if isa(e, InvalidStateException) && e.state === :closed
+        if isa(e, typeof(c.excp)) && e.state === :closed
             return nothing
         else
             rethrow()
